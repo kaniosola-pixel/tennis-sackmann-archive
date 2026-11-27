@@ -7796,40 +7796,48 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4d63adcc">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ab395a00">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Kto-wygra-mecz-ATP?-Cz%C4%99%C5%9B%C4%87-1:-dane-i-cechy">Kto wygra mecz ATP? Część 1: dane i cechy<a class="anchor-link" href="#Kto-wygra-mecz-ATP?-Cz%C4%99%C5%9B%C4%87-1:-dane-i-cechy">¶</a></h1><p><strong>Projekt SRD (SGH, zima 2026/27).</strong> Ten notatnik przygotowuje zbiór, na którym pozostali członkowie grupy trenują modele.</p>
-<p>Na wyjściu dostajemy plik <code>dane/atp_cechy_2015_2024.csv</code>: jeden wiersz to jeden mecz ATP z lat 2015–2024, zmienna celu <code>A_wins</code> (1 = wygrał zawodnik A, 0 = wygrał zawodnik B) i cechy policzone <strong>wyłącznie z informacji dostępnych przed meczem</strong>.</p>
-<p>Plan notatnika:</p>
+<h1 id="Kto-wygra-mecz-ATP?-Cz%C4%99%C5%9B%C4%87-1:-dane-i-cechy">Kto wygra mecz ATP? Część 1: dane i cechy<a class="anchor-link" href="#Kto-wygra-mecz-ATP?-Cz%C4%99%C5%9B%C4%87-1:-dane-i-cechy">¶</a></h1><p><strong>Projekt SRD (SGH, semestr zimowy 2026/27).</strong></p>
+<p><strong>Cel projektu:</strong> przewidzieć <strong>przed rozpoczęciem meczu</strong>, który z dwóch zawodników wygra mecz ATP, i sprawdzić, czy model uczenia maszynowego bije prostą regułę „wygrywa wyżej notowany w rankingu”.</p>
+<p><strong>Cel tego notatnika:</strong> przygotować zbiór danych, na którym trenujemy modele. Na wyjściu dostajemy plik <code>dane/atp_cechy_2015_2024.csv</code>:</p>
+<ul>
+<li>jeden wiersz = jeden mecz ATP z lat 2015–2024,</li>
+<li>zmienna celu <code>A_wins</code> (1 = wygrał zawodnik A, 0 = wygrał zawodnik B),</li>
+<li>cechy policzone <strong>wyłącznie z informacji dostępnych przed meczem</strong>.</li>
+</ul>
+<p><strong>Źródło danych:</strong> Jeff Sackmann, <a href="https://github.com/JeffSackmann/tennis_atp">tennis_atp</a> (licencja CC BY-NC-SA 4.0), pobierane z archiwalnej kopii <a href="https://github.com/kaniosola-pixel/tennis-sackmann-archive">tennis-sackmann-archive</a>.</p>
+<p><strong>Plan notatnika:</strong></p>
 <ol>
 <li>Wczytanie danych (2010–2024; lata 2010–2014 służą tylko jako „rozgrzewka” historii graczy).</li>
-<li>Czyszczenie: kolejność meczów, krecze i walkowery, duplikaty, braki.</li>
+<li>Czyszczenie: kolejność meczów, duplikaty, krecze i walkowery, braki, wartości odstające.</li>
 <li>Cechy historyczne w układzie „zawodnik–mecz” (<code>shift(1)</code>, czyli tylko przeszłość).</li>
 <li>Ranking Elo liczony sekwencyjnie.</li>
-<li>Losowe przypisanie ról A/B i cechy „A minus B”.</li>
-<li>Imputacja braków, podział czasowy train/test.</li>
-<li>Testy na wyciek i kontrola baseline'u.</li>
+<li>Losowe przypisanie ról A/B.</li>
+<li>Podział czasowy, imputacja braków i cechy „A minus B”.</li>
+<li>Kontrole jakości i testy na wyciek danych.</li>
 <li>Zapis gotowego zbioru.</li>
+<li>Podsumowanie i wnioski.</li>
 </ol>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=80c0bab6">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=76e17443">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Jeśli brakuje pakietów: <code>%pip install --upgrade numpy pandas matplotlib seaborn scikit-learn</code>.</p>
+<h2 id="0.-Biblioteki-i-ustawienia">0. Biblioteki i ustawienia<a class="anchor-link" href="#0.-Biblioteki-i-ustawienia">¶</a></h2><p>Jeśli brakuje pakietów, w osobnej komórce uruchom <code>%pip install --upgrade numpy pandas matplotlib seaborn scikit-learn</code> i zrestartuj kernel.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=594e2d35">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=4bd52349">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7837,7 +7845,10 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">urllib.request</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
@@ -7847,14 +7858,13 @@ a.anchor-link {
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_pipeline</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">accuracy_score</span><span class="p">,</span> <span class="n">roc_auc_score</span>
 
-<span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s2">"display.max_columns"</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s2">"display.max_columns"</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>   <span class="c1"># pokazuj do 60 kolumn w podglądzie tabel</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">"whitegrid"</span><span class="p">)</span>
 
-<span class="n">RANDOM_STATE</span> <span class="o">=</span> <span class="mi">42</span>
-<span class="n">DATA_DIR</span> <span class="o">=</span> <span class="s2">"../atp"</span>            <span class="c1"># pliki atp_matches_RRRR.csv z archiwum Sackmanna</span>
-<span class="n">FIRST_HISTORY_YEAR</span> <span class="o">=</span> <span class="mi">2010</span>      <span class="c1"># od kiedy liczymy historię graczy</span>
-<span class="n">FIRST_MODEL_YEAR</span> <span class="o">=</span> <span class="mi">2015</span>        <span class="c1"># od kiedy modelujemy</span>
-<span class="n">LAST_TRAIN_YEAR</span> <span class="o">=</span> <span class="mi">2022</span>         <span class="c1"># trening 2015–2022, test 2023–2024</span>
+<span class="n">RANDOM_STATE</span> <span class="o">=</span> <span class="mi">42</span>              <span class="c1"># ziarno losowości, żeby wyniki były powtarzalne</span>
+<span class="n">FIRST_HISTORY_YEAR</span> <span class="o">=</span> <span class="mi">2010</span>      <span class="c1"># od kiedy liczymy historię graczy (rozgrzewka cech i Elo)</span>
+<span class="n">FIRST_MODEL_YEAR</span> <span class="o">=</span> <span class="mi">2015</span>        <span class="c1"># od kiedy mecze trafiają do zbioru modelowego</span>
+<span class="n">LAST_TRAIN_YEAR</span> <span class="o">=</span> <span class="mi">2022</span>         <span class="c1"># trening: 2015–2022, test: 2023–2024</span>
 <span class="n">LAST_YEAR</span> <span class="o">=</span> <span class="mi">2024</span>
 </pre></div>
 </div>
@@ -7862,17 +7872,17 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f2b8a784">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d17293bf">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="1.-Wczytanie-danych">1. Wczytanie danych<a class="anchor-link" href="#1.-Wczytanie-danych">¶</a></h2><p>Każdy plik to jeden sezon. Łączymy je <code>pd.concat</code>. Kolumna <code>tourney_date</code> ma format RRRRMMDD i oznacza <strong>poniedziałek rozpoczęcia turnieju</strong>, a nie dzień meczu. Wszystkie mecze turnieju mają więc tę samą datę, co trzeba uwzględnić przy ustalaniu kolejności.</p>
+<p>Pliki z meczami pobieramy z GitHuba do folderu <code>atp</code> obok notatnika. Jeśli notatnik leży w repozytorium z danymi (folder <code>../atp</code> już istnieje), korzystamy z niego i niczego nie pobieramy.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=f1660752">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d1337ded">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7880,10 +7890,58 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">BASE_URL</span> <span class="o">=</span> <span class="s2">"https://raw.githubusercontent.com/kaniosola-pixel/tennis-sackmann-archive/main/atp"</span>
+<span class="n">DATA_DIR</span> <span class="o">=</span> <span class="s2">"../atp"</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s2">"../atp"</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"atp"</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">DATA_DIR</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s2">"dane"</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>                 <span class="c1"># tu zapiszemy gotowy zbiór</span>
+
+<span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">FIRST_HISTORY_YEAR</span><span class="p">,</span> <span class="n">LAST_YEAR</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"atp_matches_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">.csv"</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">DATA_DIR</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">"</span><span class="p">):</span>  <span class="c1"># pobieramy tylko brakujące pliki</span>
+        <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">BASE_URL</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">DATA_DIR</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Dane w folderze:"</span><span class="p">,</span> <span class="n">DATA_DIR</span><span class="p">,</span> <span class="s2">"| liczba plików:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">DATA_DIR</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Dane w folderze: ../atp | liczba plików: 176
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4ae7af38">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="1.-Wczytanie-danych">1. Wczytanie danych<a class="anchor-link" href="#1.-Wczytanie-danych">¶</a></h2><p>Każdy plik to jeden sezon, więc łączymy je przez <code>pd.concat</code>. Kolumna <code>tourney_date</code> ma format RRRRMMDD i oznacza <strong>dzień rozpoczęcia turnieju</strong>, a nie dzień meczu. Wszystkie mecze turnieju mają więc tę samą datę, co trzeba uwzględnić przy ustalaniu kolejności (punkt 2.1).</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=739212a5">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">raw</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
     <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">DATA_DIR</span><span class="si">}</span><span class="s2">/atp_matches_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">.csv"</span><span class="p">)</span> <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">FIRST_HISTORY_YEAR</span><span class="p">,</span> <span class="n">LAST_YEAR</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)],</span>
-    <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>   <span class="c1"># nowy indeks 0..n-1 zamiast powtarzających się indeksów z plików</span>
 <span class="p">)</span>
+<span class="c1"># 20150104 -&gt; 2015-01-04</span>
 <span class="n">raw</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">"</span><span class="p">)</span>
 <span class="n">raw</span><span class="p">[</span><span class="s2">"year"</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -7905,7 +7963,7 @@ a.anchor-link {
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -8250,12 +8308,12 @@ a.anchor-link {
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2aa59d5e">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=22f63027">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">raw</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"year"</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="s2">"liczba_meczow"</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
@@ -8269,7 +8327,7 @@ a.anchor-link {
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -8333,33 +8391,48 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5808fc15">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a2529a19">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="2.-Czyszczenie">2. Czyszczenie<a class="anchor-link" href="#2.-Czyszczenie">¶</a></h2><h3 id="2.1-Kolejno%C5%9B%C4%87-mecz%C3%B3w">2.1 Kolejność meczów<a class="anchor-link" href="#2.1-Kolejno%C5%9B%C4%87-mecz%C3%B3w">¶</a></h3><p>Cechy historyczne wymagają poprawnej kolejności. W obrębie turnieju sortujemy po rundzie (od 1. rundy do finału), a w rundzie po <code>match_num</code>. <code>RR</code> (round robin) to faza grupowa w ATP Finals i Pucharze Davisa, więc stawiamy ją przed półfinałem.</p>
+<p><strong>Wynik:</strong> 42 571 meczów i 49 oryginalnych kolumn (plus dopisana <code>year</code>). Sezony mają po ok. 2 700–3 100 meczów, wyjątkiem jest 2020 r. (pandemia, 1 462 mecze). Same lata 2015–2024 to 27 672 mecze, więc wymóg &gt;5000 rekordów jest spełniony z dużym zapasem.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1c657787">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=07b6a8e3">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="2.-Czyszczenie">2. Czyszczenie<a class="anchor-link" href="#2.-Czyszczenie">¶</a></h2><h3 id="2.1-Kolejno%C5%9B%C4%87-mecz%C3%B3w">2.1 Kolejność meczów<a class="anchor-link" href="#2.1-Kolejno%C5%9B%C4%87-mecz%C3%B3w">¶</a></h3><p>Cechy historyczne (forma, Elo) wymagają poprawnej kolejności meczów. Ponieważ data jest wspólna dla całego turnieju, w obrębie turnieju sortujemy po rundzie (od 1. rundy do finału), a w rundzie po <code>match_num</code>.</p>
+<ul>
+<li><code>RR</code> (round robin) to faza grupowa w ATP Finals i Pucharze Davisa, więc stawiamy ją przed ćwierćfinałem.</li>
+<li><code>BR</code> (bronze) to mecz o brązowy medal olimpijski, rozgrywany między półfinałem a finałem.</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=03b4f752">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">ROUND_ORDER</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"R128"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"R64"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"R32"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"R16"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">"RR"</span><span class="p">:</span> <span class="mf">4.5</span><span class="p">,</span> <span class="s2">"QF"</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"SF"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="s2">"BR"</span><span class="p">:</span> <span class="mf">6.5</span><span class="p">,</span> <span class="s2">"F"</span><span class="p">:</span> <span class="mi">7</span><span class="p">}</span>
 <span class="n">raw</span><span class="p">[</span><span class="s2">"round_order"</span><span class="p">]</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="s2">"round"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">ROUND_ORDER</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Nieznane rundy:"</span><span class="p">,</span> <span class="n">raw</span><span class="p">[</span><span class="s2">"round_order"</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Nieznane rundy:"</span><span class="p">,</span> <span class="n">raw</span><span class="p">[</span><span class="s2">"round_order"</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>   <span class="c1"># kontrola: każda runda ma numer</span>
 
 <span class="n">matches</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">raw</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"tourney_date"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">,</span> <span class="s2">"round_order"</span><span class="p">,</span> <span class="s2">"match_num"</span><span class="p">])</span>
     <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="p">)</span>
-<span class="n">matches</span><span class="p">[</span><span class="s2">"match_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>   <span class="c1"># globalny numer meczu = oś czasu</span>
+<span class="n">matches</span><span class="p">[</span><span class="s2">"match_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>   <span class="c1"># globalny numer meczu = oś czasu (mniejszy = wcześniejszy)</span>
 </pre></div>
 </div>
 </div>
@@ -8379,22 +8452,22 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c15c7294">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bbd4a5c1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="2.2-Duplikaty">2.2 Duplikaty<a class="anchor-link" href="#2.2-Duplikaty">¶</a></h3>
+<h3 id="2.2-Duplikaty">2.2 Duplikaty<a class="anchor-link" href="#2.2-Duplikaty">¶</a></h3><p>Mecz jest jednoznacznie identyfikowany przez turniej (<code>tourney_id</code>) i numer meczu w turnieju (<code>match_num</code>).</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b124cc1c">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=f2a99cd3">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Duplikaty (tourney_id, match_num):"</span><span class="p">,</span> <span class="n">matches</span><span class="o">.</span><span class="n">duplicated</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"tourney_id"</span><span class="p">,</span> <span class="s2">"match_num"</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
@@ -8417,30 +8490,32 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cb0ecd43">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=876fbea5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="2.3-Mecze-niedoko%C5%84czone">2.3 Mecze niedokończone<a class="anchor-link" href="#2.3-Mecze-niedoko%C5%84czone">¶</a></h3><p>W kolumnie <code>score</code> szukamy kreczów (<code>RET</code>), walkowerów (<code>W/O</code>, <code>Walkover</code>), dyskwalifikacji (<code>DEF</code>, <code>Default</code>) i meczów przerwanych (<code>ABD</code>, <code>abandoned</code>).</p>
-<p>Rozróżniamy dwie rzeczy:</p>
+<p><strong>Wynik:</strong> brak duplikatów, nic nie usuwamy.</p>
+<h3 id="2.3-Mecze-niedoko%C5%84czone">2.3 Mecze niedokończone<a class="anchor-link" href="#2.3-Mecze-niedoko%C5%84czone">¶</a></h3><p>W kolumnie <code>score</code> szukamy kreczów (<code>RET</code>), walkowerów (<code>W/O</code>, <code>Walkover</code>), dyskwalifikacji (<code>DEF</code>, <code>Def.</code>, <code>Default</code>) i meczów przerwanych (<code>ABD</code>, <code>abandoned</code>).</p>
+<p>Rozróżniamy dwie sytuacje:</p>
 <ul>
-<li><strong>Do modelu</strong> (wiersze zbioru) bierzemy tylko mecze dokończone, bo przy kreczu wynik nie mówi, kto był lepszy.</li>
+<li><strong>Do zbioru modelowego</strong> bierzemy tylko mecze dokończone. Przy kreczu wynik nie mówi, kto grał lepiej, bo zawodnik mógł prowadzić i doznać kontuzji.</li>
 <li><strong>Do historii gracza</strong> (forma, Elo, H2H) bierzemy wszystkie mecze faktycznie rozegrane, także te z kreczem. Pomijamy tylko walkowery, bo wtedy mecz się nie odbył.</li>
 </ul>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d89e5069">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=da93b7ac">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">score</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="s2">"score"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="c1"># dwie flagi True/False: na razie niczego nie usuwamy</span>
 <span class="n">matches</span><span class="p">[</span><span class="s2">"walkover"</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="sa">r</span><span class="s2">"W/O|Walkover"</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">matches</span><span class="p">[</span><span class="s2">"unfinished"</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="sa">r</span><span class="s2">"RET|W/O|Walkover|DEF|Def\.|Default|ABD|abandoned"</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -8469,26 +8544,28 @@ Zostaje do modelu: 26759
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=939a7223">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=52d77819">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="2.4-Braki-danych-w-kolumnach-przedmeczowych">2.4 Braki danych w kolumnach przedmeczowych<a class="anchor-link" href="#2.4-Braki-danych-w-kolumnach-przedmeczowych">¶</a></h3><p>Statystyki serwisowe (<code>w_*</code>, <code>l_*</code>) mają braki głównie w Pucharze Davisa. Imputację zrobimy na końcu, po zbudowaniu cech (punkt 6), żeby mediany liczyć tylko na zbiorze treningowym.</p>
+<p><strong>Wynik:</strong> 913 meczów niedokończonych (3,3%), do modelu zostaje 26 759 meczów.</p>
+<h3 id="2.4-Braki-danych-w-kolumnach-przedmeczowych">2.4 Braki danych w kolumnach przedmeczowych<a class="anchor-link" href="#2.4-Braki-danych-w-kolumnach-przedmeczowych">¶</a></h3>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=94f742ac">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=67cf8db0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">pre_match_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"winner_rank"</span><span class="p">,</span> <span class="s2">"loser_rank"</span><span class="p">,</span> <span class="s2">"winner_rank_points"</span><span class="p">,</span> <span class="s2">"loser_rank_points"</span><span class="p">,</span>
                   <span class="s2">"winner_ht"</span><span class="p">,</span> <span class="s2">"loser_ht"</span><span class="p">,</span> <span class="s2">"winner_age"</span><span class="p">,</span> <span class="s2">"loser_age"</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">,</span> <span class="s2">"w_svpt"</span><span class="p">,</span> <span class="s2">"l_svpt"</span><span class="p">]</span>
+<span class="c1"># odsetek braków w każdej kolumnie, w procentach</span>
 <span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">in_model_years</span><span class="p">,</span> <span class="n">pre_match_cols</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="s2">"% braków"</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -8500,7 +8577,7 @@ Zostaje do modelu: 26759
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -8576,33 +8653,36 @@ Zostaje do modelu: 26759
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=850902c8">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1ea1c3ed">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="2.5-Warto%C5%9Bci-odstaj%C4%85ce">2.5 Wartości odstające<a class="anchor-link" href="#2.5-Warto%C5%9Bci-odstaj%C4%85ce">¶</a></h3><p>Wiek i wzrost sprawdzamy regułą IQR (poza przedziałem $[Q_1 - 3 \cdot IQR,\ Q_3 + 3 \cdot IQR]$). Wzrost 3, 15 czy 71 cm to oczywiste błędy wprowadzania, więc zamieniamy je na brak (zostaną zaimputowane w punkcie 6). Ranking i punkty rankingowe są skośne, ale to prawdziwe wartości, więc ich nie usuwamy, tylko logarytmujemy przy budowie cech.</p>
+<p><strong>Wynik:</strong> braków jest niewiele. Przegrani mają ich więcej niż zwycięzcy, bo to częściej słabsi, mniej znani gracze, więc <strong>sam brak też niesie informację</strong> (dlatego przy imputacji dodamy flagi braku). Statystyk serwisowych (<code>w_svpt</code>, <code>l_svpt</code>) brakuje w ok. 4% meczów, głównie w Pucharze Davisa.</p>
+<p>Braków nie uzupełniamy jeszcze teraz. Zrobimy to w punkcie 6, po podziale na trening i test, żeby mediany liczyć <strong>tylko na zbiorze treningowym</strong> (unikamy wycieku informacji z testu).</p>
+<h3 id="2.5-Warto%C5%9Bci-odstaj%C4%85ce">2.5 Wartości odstające<a class="anchor-link" href="#2.5-Warto%C5%9Bci-odstaj%C4%85ce">¶</a></h3><p>Wiek i wzrost sprawdzamy regułą IQR: podejrzana jest wartość spoza przedziału $[Q_1 - 3 \cdot IQR,\ Q_3 + 3 \cdot IQR]$. Używamy mnożnika 3 zamiast typowego 1,5, bo przy 1,5 górna granica wzrostu wynosiłaby ok. 203 cm i odcięłaby prawdziwych, bardzo wysokich zawodników (np. Opelka, 211 cm).</p>
+<p>Ranking i punkty rankingowe są silnie skośne, ale to prawdziwe wartości, więc ich nie usuwamy, tylko logarytmujemy przy budowie cech (punkt 6).</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d25cdb9a">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ab099506">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"ht"</span><span class="p">,</span> <span class="s2">"age"</span><span class="p">]:</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">matches</span><span class="p">[</span><span class="sa">f</span><span class="s2">"winner_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">],</span> <span class="n">matches</span><span class="p">[</span><span class="sa">f</span><span class="s2">"loser_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">]])</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">matches</span><span class="p">[</span><span class="sa">f</span><span class="s2">"winner_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">],</span> <span class="n">matches</span><span class="p">[</span><span class="sa">f</span><span class="s2">"loser_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">]])</span>   <span class="c1"># wszyscy gracze razem</span>
     <span class="n">q1</span><span class="p">,</span> <span class="n">q3</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">quantile</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">])</span>
     <span class="n">low</span><span class="p">,</span> <span class="n">high</span> <span class="o">=</span> <span class="n">q1</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">q3</span> <span class="o">-</span> <span class="n">q1</span><span class="p">),</span> <span class="n">q3</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">q3</span> <span class="o">-</span> <span class="n">q1</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"winner"</span><span class="p">,</span> <span class="s2">"loser"</span><span class="p">]:</span>
         <span class="n">bad</span> <span class="o">=</span> <span class="o">~</span><span class="n">matches</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">matches</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span><span class="o">.</span><span class="n">notna</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">: zakres [</span><span class="si">{</span><span class="n">low</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">high</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">], poza zakresem: </span><span class="si">{</span><span class="n">bad</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">bad</span><span class="p">,</span><span class="w"> </span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s1">'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">col</span> <span class="o">==</span> <span class="s2">"ht"</span><span class="p">:</span>
-            <span class="n">matches</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">bad</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">bad</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>   <span class="c1"># błąd wprowadzania -&gt; brak, uzupełnimy później</span>
 </pre></div>
 </div>
 </div>
@@ -8625,22 +8705,23 @@ loser_age: zakres [6.4, 47.7], poza zakresem: 0 -&gt; []
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=478153d4">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=aaf36626">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Nawierzchnię <code>Carpet</code> (dywan, kilkadziesiąt meczów do 2016 r.) i brak nawierzchni łączymy w kategorię <code>Other</code>.</p>
+<p><strong>Wynik:</strong> wzrost 3, 15 i 71 cm to oczywiste błędy wprowadzania danych (11 wystąpień), więc zamieniamy je na brak. Wiek nie ma wartości odstających.</p>
+<h3 id="2.6-Nawierzchnia">2.6 Nawierzchnia<a class="anchor-link" href="#2.6-Nawierzchnia">¶</a></h3><p>Dywan (<code>Carpet</code>, kilkadziesiąt meczów do 2016 r.) i brak nawierzchni łączymy w jedną kategorię <code>Other</code>, bo tak małe grupy nic nie wniosą do modelu.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2cf340aa">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=efc07c90">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">matches</span><span class="p">[</span><span class="s2">"surface"</span><span class="p">]</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="s2">"surface"</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">matches</span><span class="p">[</span><span class="s2">"surface"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">"Hard"</span><span class="p">,</span> <span class="s2">"Clay"</span><span class="p">,</span> <span class="s2">"Grass"</span><span class="p">]),</span> <span class="s2">"Other"</span><span class="p">)</span>
@@ -8655,7 +8736,7 @@ loser_age: zakres [6.4, 47.7], poza zakresem: 0 -&gt; []
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>surface
 Hard     24793
@@ -8668,36 +8749,37 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d42dd692">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3a60a067">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="3.-Cechy-historyczne:-uk%C5%82ad-%E2%80%9Ezawodnik%E2%80%93mecz%E2%80%9D">3. Cechy historyczne: układ „zawodnik–mecz”<a class="anchor-link" href="#3.-Cechy-historyczne:-uk%C5%82ad-%E2%80%9Ezawodnik%E2%80%93mecz%E2%80%9D">¶</a></h2><p>Surowy wiersz opisuje mecz z perspektywy zwycięzcy i przegranego. Żeby policzyć historię <strong>jednego zawodnika</strong>, rozkładamy każdy mecz na dwa wiersze: jeden dla zwycięzcy (<code>win = 1</code>), drugi dla przegranego (<code>win = 0</code>). Wtedy wystarczy <code>groupby("player_id")</code>.</p>
-<p>Przy okazji liczymy statystyki z danego meczu, które <strong>same w sobie są wyciekiem</strong>, ale ich średnia z <strong>poprzednich</strong> meczów jest legalną cechą:</p>
+<h2 id="3.-Cechy-historyczne:-uk%C5%82ad-%E2%80%9Ezawodnik%E2%80%93mecz%E2%80%9D">3. Cechy historyczne: układ „zawodnik–mecz”<a class="anchor-link" href="#3.-Cechy-historyczne:-uk%C5%82ad-%E2%80%9Ezawodnik%E2%80%93mecz%E2%80%9D">¶</a></h2><p>Surowy wiersz opisuje mecz z perspektywy zwycięzcy i przegranego. Żeby policzyć historię <strong>jednego zawodnika</strong> (np. jego formę), rozkładamy każdy mecz na dwa wiersze: jeden dla zwycięzcy (<code>win = 1</code>), drugi dla przegranego (<code>win = 0</code>). Wtedy wystarczy <code>groupby("player_id")</code>.</p>
+<p>Przy okazji liczymy statystyki z danego meczu, które <strong>same w sobie są wyciekiem</strong> (znamy je dopiero po meczu), ale ich średnia z <strong>poprzednich</strong> meczów jest legalną cechą:</p>
 <ul>
-<li><code>serve_won</code> = odsetek wygranych punktów przy własnym serwisie,</li>
-<li><code>return_won</code> = odsetek wygranych punktów przy serwisie rywala.</li>
+<li><code>serve_won</code> = odsetek punktów wygranych przy własnym serwisie = (wygrane po 1. serwisie + wygrane po 2. serwisie) / punkty serwisowe,</li>
+<li><code>return_won</code> = odsetek punktów wygranych przy serwisie rywala = 1 − odsetek wygranych serwisowych rywala.</li>
 </ul>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=7f9e5bb1">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=5a1113c8">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">played</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="o">~</span><span class="n">matches</span><span class="p">[</span><span class="s2">"walkover"</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>   <span class="c1"># historia: wszystkie rozegrane mecze</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">played</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="o">~</span><span class="n">matches</span><span class="p">[</span><span class="s2">"walkover"</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>   <span class="c1"># historia: wszystkie rozegrane mecze (bez walkowerów)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">player_rows</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">me</span><span class="p">,</span> <span class="n">opp</span><span class="p">,</span> <span class="n">win</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Jeden wiersz na zawodnika `me` w każdym meczu (me/opp to prefiksy 'winner'/'loser')."""</span>
+    <span class="c1"># statystyki zwycięzcy mają prefiks w_, przegranego l_; dla przegranego zamieniamy je miejscami</span>
     <span class="n">s_me</span><span class="p">,</span> <span class="n">s_opp</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"w"</span><span class="p">,</span> <span class="s2">"l"</span><span class="p">)</span> <span class="k">if</span> <span class="n">me</span> <span class="o">==</span> <span class="s2">"winner"</span> <span class="k">else</span> <span class="p">(</span><span class="s2">"l"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
         <span class="s2">"match_id"</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s2">"match_id"</span><span class="p">],</span>
         <span class="s2">"tourney_id"</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s2">"tourney_id"</span><span class="p">],</span>
         <span class="s2">"tourney_date"</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">],</span>
@@ -8708,13 +8790,12 @@ Name: count, dtype: int64</pre>
         <span class="s2">"serve_won"</span><span class="p">:</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s_me</span><span class="si">}</span><span class="s2">_1stWon"</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s_me</span><span class="si">}</span><span class="s2">_2ndWon"</span><span class="p">])</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s_me</span><span class="si">}</span><span class="s2">_svpt"</span><span class="p">],</span>
         <span class="s2">"return_won"</span><span class="p">:</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s_opp</span><span class="si">}</span><span class="s2">_1stWon"</span><span class="p">]</span> <span class="o">+</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s_opp</span><span class="si">}</span><span class="s2">_2ndWon"</span><span class="p">])</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s_opp</span><span class="si">}</span><span class="s2">_svpt"</span><span class="p">],</span>
     <span class="p">})</span>
-    <span class="k">return</span> <span class="n">out</span>
 
 
 <span class="n">long</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">player_rows</span><span class="p">(</span><span class="n">played</span><span class="p">,</span> <span class="s2">"winner"</span><span class="p">,</span> <span class="s2">"loser"</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                   <span class="n">player_rows</span><span class="p">(</span><span class="n">played</span><span class="p">,</span> <span class="s2">"loser"</span><span class="p">,</span> <span class="s2">"winner"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
-<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>          <span class="c1"># svpt = 0 daje dzielenie przez zero</span>
-<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"match_id"</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>                       <span class="c1"># svpt = 0 daje dzielenie przez zero</span>
+<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"match_id"</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># gracz, potem chronologicznie</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">long</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 <span class="n">long</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
@@ -8734,7 +8815,7 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -8834,71 +8915,49 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=701b0c81">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=0bad9a4c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Kluczowy trik: <code>shift(1)</code>.</strong> W każdej grupie (zawodnik) przesuwamy kolumnę o jeden wiersz w dół. Wartość w wierszu meczu <em>t</em> pochodzi wtedy z meczu <em>t − 1</em>, więc wynik bieżącego meczu nigdy nie trafia do jego własnej cechy. Dopiero na przesuniętej kolumnie liczymy <code>rolling</code> (średnia krocząca) albo <code>cumsum</code>.</p>
-<p>Cechy:</p>
-<ul>
-<li><code>n_prev</code> – liczba wcześniejszych meczów (od 2010 r.), czyli miara „zimnego startu”,</li>
-<li><code>form10</code> – odsetek wygranych w ostatnich 10 meczach,</li>
-<li><code>surface_wr</code> – odsetek wygranych w ostatnich 20 meczach na <strong>tej</strong> nawierzchni, wygładzony w stronę 50% (prior o wadze 5 meczów), żeby gracz z bilansem 1–0 nie dostał 100%,</li>
-<li><code>h2h_wins</code>, <code>h2h_n</code> – wygrane i liczba wcześniejszych meczów z tym samym rywalem,</li>
-<li><code>days_since_last_tourney</code> – przerwa od poprzedniego turnieju (w dniach),</li>
-<li><code>matches_14d</code> – liczba meczów w ostatnich 14 dniach (łącznie z wcześniejszymi rundami bieżącego turnieju),</li>
-<li><code>serve_avg</code>, <code>return_avg</code> – średnie z ostatnich 20 meczów ze statystykami.</li>
-</ul>
+<p><strong>Wynik:</strong> 84 612 wierszy, czyli 42 306 rozegranych meczów × 2 zawodników.</p>
+<h3 id="3.1-Kluczowy-trik:-shift(1)">3.1 Kluczowy trik: <code>shift(1)</code><a class="anchor-link" href="#3.1-Kluczowy-trik:-shift(1)">¶</a></h3><p>W każdej grupie (zawodnik) przesuwamy kolumnę o jeden wiersz w dół. Wartość w wierszu meczu <em>t</em> pochodzi wtedy z meczu <em>t − 1</em>, więc <strong>wynik bieżącego meczu nigdy nie trafia do jego własnej cechy</strong>. Dopiero na przesuniętej kolumnie liczymy średnią kroczącą (<code>rolling</code>) albo sumę narastającą (<code>cumsum</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Cecha</th>
+<th>Definicja</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>n_prev</code></td>
+<td>liczba wcześniejszych meczów gracza od 2010 r. (miara „zimnego startu”)</td>
+</tr>
+<tr>
+<td><code>form10</code></td>
+<td>odsetek wygranych w ostatnich 10 meczach</td>
+</tr>
+<tr>
+<td><code>serve_avg</code>, <code>return_avg</code></td>
+<td>średni <code>serve_won</code> / <code>return_won</code> z ostatnich 20 meczów (min. 3 mecze ze statystykami)</td>
+</tr>
+<tr>
+<td><code>surface_wr</code></td>
+<td>odsetek wygranych w ostatnich 20 meczach <strong>na tej nawierzchni</strong>, wygładzony</td>
+</tr>
+<tr>
+<td><code>h2h_wins</code>, <code>h2h_n</code></td>
+<td>wygrane i liczba wcześniejszych meczów z <strong>tym samym rywalem</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Wygładzanie <code>surface_wr</code>:</strong> do prawdziwych meczów doliczamy 5 „wirtualnych” meczów z wynikiem 50%. Gracz z bilansem 1–0 na trawie dostaje (1 + 2,5) / (1 + 5) ≈ 58% zamiast 100%, a przy wielu meczach wygładzenie przestaje mieć znaczenie.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=158d8778">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"player_id"</span><span class="p">)</span>
-
-<span class="n">long</span><span class="p">[</span><span class="s2">"n_prev"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"form10"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"win"</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"serve_avg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"serve_won"</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"return_avg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"return_won"</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
-
-<span class="c1"># odsetek wygranych na nawierzchni, wygładzony: (wygrane + 5 * 0.5) / (mecze + 5)</span>
-<span class="n">gs</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">])[</span><span class="s2">"win"</span><span class="p">]</span>
-<span class="n">PRIOR_N</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="n">surf_wins</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">surf_n</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"surface_wr"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">surf_wins</span> <span class="o">+</span> <span class="n">PRIOR_N</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">surf_n</span> <span class="o">+</span> <span class="n">PRIOR_N</span><span class="p">)</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"surface_n_prev"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">])</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
-
-<span class="c1"># head-to-head: historia pary (zawodnik, rywal)</span>
-<span class="n">gh</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"opp_id"</span><span class="p">])[</span><span class="s2">"win"</span><span class="p">]</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"h2h_wins"</span><span class="p">]</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"h2h_n"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"opp_id"</span><span class="p">])</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bbe670e9">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Przerwa od poprzedniego turnieju: bierzemy jeden wiersz na (zawodnik, turniej) i liczymy różnicę dat startu kolejnych turniejów. Brak poprzedniego turnieju (pierwszy mecz w danych) uzupełniamy na razie wartością NaN.</p>
-<p>Liczba meczów w 14 dniach: dla każdego meczu liczymy, ile <strong>wcześniejszych</strong> meczów zawodnika ma datę turnieju nie starszą niż 14 dni. <code>np.searchsorted</code> znajduje w posortowanych datach pierwszy mecz w oknie, a różnica pozycji daje liczbę meczów.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d0b219ab">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=028639d3">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8906,20 +8965,27 @@ Name: count, dtype: int64</pre>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">tour</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">])[[</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">,</span> <span class="s2">"tourney_date"</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="n">tour</span><span class="p">[</span><span class="s2">"days_since_last_tourney"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tour</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"player_id"</span><span class="p">)[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span>
-<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">tour</span><span class="p">[[</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">,</span> <span class="s2">"days_since_last_tourney"</span><span class="p">]],</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"player_id"</span><span class="p">)</span>
 
+<span class="n">long</span><span class="p">[</span><span class="s2">"n_prev"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>   <span class="c1"># numeracja od 0: w pierwszym meczu gracz ma 0 wcześniejszych</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"form10"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"win"</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"serve_avg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"serve_won"</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"return_avg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"return_won"</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">matches_last_14d</span><span class="p">(</span><span class="n">dates</span><span class="p">):</span>
-    <span class="n">d</span> <span class="o">=</span> <span class="n">dates</span><span class="o">.</span><span class="n">values</span>
-    <span class="n">first_in_window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">d</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">),</span> <span class="n">side</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">-</span> <span class="n">first_in_window</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">dates</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+<span class="c1"># odsetek wygranych na nawierzchni, wygładzony: (wygrane + 5 * 0.5) / (mecze + 5)</span>
+<span class="n">PRIOR_N</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">])[</span><span class="s2">"win"</span><span class="p">]</span>
+<span class="n">surf_wins</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">surf_n</span> <span class="o">=</span> <span class="n">gs</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"surface_wr"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">surf_wins</span> <span class="o">+</span> <span class="n">PRIOR_N</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">surf_n</span> <span class="o">+</span> <span class="n">PRIOR_N</span><span class="p">)</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"surface_n_prev"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">])</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
 
+<span class="c1"># head-to-head: grupujemy po parze (zawodnik, rywal)</span>
+<span class="n">gh</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"opp_id"</span><span class="p">])[</span><span class="s2">"win"</span><span class="p">]</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"h2h_wins"</span><span class="p">]</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"h2h_n"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"opp_id"</span><span class="p">])</span><span class="o">.</span><span class="n">cumcount</span><span class="p">()</span>
 
-<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"match_id"</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">long</span><span class="p">[</span><span class="s2">"matches_14d"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">matches_last_14d</span><span class="p">)</span>
-<span class="n">long</span><span class="p">[[</span><span class="s2">"n_prev"</span><span class="p">,</span> <span class="s2">"form10"</span><span class="p">,</span> <span class="s2">"surface_wr"</span><span class="p">,</span> <span class="s2">"h2h_wins"</span><span class="p">,</span> <span class="s2">"h2h_n"</span><span class="p">,</span> <span class="s2">"days_since_last_tourney"</span><span class="p">,</span> <span class="s2">"matches_14d"</span><span class="p">,</span> <span class="s2">"serve_avg"</span><span class="p">,</span> <span class="s2">"return_avg"</span><span class="p">]]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">long</span><span class="p">[[</span><span class="s2">"n_prev"</span><span class="p">,</span> <span class="s2">"form10"</span><span class="p">,</span> <span class="s2">"surface_wr"</span><span class="p">,</span> <span class="s2">"h2h_wins"</span><span class="p">,</span> <span class="s2">"h2h_n"</span><span class="p">,</span> <span class="s2">"serve_avg"</span><span class="p">,</span> <span class="s2">"return_avg"</span><span class="p">]]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -9017,28 +9083,6 @@ Name: count, dtype: int64</pre>
 <td>38.000</td>
 </tr>
 <tr>
-<th>days_since_last_tourney</th>
-<td>82408.0</td>
-<td>41.782</td>
-<td>121.837</td>
-<td>0.000</td>
-<td>7.000</td>
-<td>14.000</td>
-<td>25.000</td>
-<td>3255.000</td>
-</tr>
-<tr>
-<th>matches_14d</th>
-<td>84612.0</td>
-<td>2.330</td>
-<td>2.193</td>
-<td>0.000</td>
-<td>1.000</td>
-<td>2.000</td>
-<td>4.000</td>
-<td>15.000</td>
-</tr>
-<tr>
 <th>serve_avg</th>
 <td>79047.0</td>
 <td>0.638</td>
@@ -9068,20 +9112,21 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=0833ba6d">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f7df71b0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="4.-Ranking-Elo">4. Ranking Elo<a class="anchor-link" href="#4.-Ranking-Elo">¶</a></h2><p>Elo to alternatywa dla rankingu ATP: każdy gracz startuje z 1500 punktami, a po każdym meczu zwycięzca zabiera przegranemu część punktów, tym więcej, im bardziej wygrana była niespodziewana. Oczekiwane prawdopodobieństwo wygranej A:</p>
-<p>$$P(A) = \frac{1}{1 + 10^{(Elo_B - Elo_A)/400}}$$</p>
-<p>Współczynnik K maleje z liczbą rozegranych meczów (wariant FiveThirtyEight: $K = 250 / (n + 5)^{0.4}$), więc nowi gracze szybko „znajdują” swój poziom, a doświadczeni są stabilniejsi. Liczymy też osobne Elo dla każdej nawierzchni.</p>
-<p>Do cechy zapisujemy Elo <strong>przed</strong> meczem, a dopiero potem je aktualizujemy. Lata 2010–2014 to rozgrzewka, żeby w 2015 r. wartości były już stabilne.</p>
+<p><strong>Wynik:</strong> średnia <code>form10</code> i <code>surface_wr</code> jest bliska 0,5, czego się spodziewamy (każdy mecz ma jednego zwycięzcę i jednego przegranego). <code>form10</code> ma braki tylko w pierwszym meczu gracza w danych (uzupełnimy je neutralną wartością 0,5). <code>h2h_n</code> ma medianę 0, bo większość par gra ze sobą po raz pierwszy.</p>
+<h3 id="3.2-Zm%C4%99czenie-i-przerwa">3.2 Zmęczenie i przerwa<a class="anchor-link" href="#3.2-Zm%C4%99czenie-i-przerwa">¶</a></h3><ul>
+<li><code>days_since_last_tourney</code> to przerwa od poprzedniego turnieju w dniach. Nie liczymy „dni od poprzedniego meczu”, bo wszystkie mecze turnieju mają tę samą datę i w turnieju zawsze wychodziłoby 0. Bierzemy więc jeden wiersz na parę (gracz, turniej) i liczymy różnicę dat startu kolejnych turniejów.</li>
+<li><code>matches_14d</code> to liczba <strong>wcześniejszych</strong> meczów gracza w ostatnich 14 dniach, łącznie z wcześniejszymi rundami bieżącego turnieju (gracz w finale ma tu kilka meczów). Daty gracza są posortowane, więc <code>np.searchsorted</code> znajduje pozycję pierwszego meczu w 14-dniowym oknie, a różnica pozycji daje liczbę meczów.</li>
+</ul>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=07010c02">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=9cb013eb">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9089,21 +9134,152 @@ Name: count, dtype: int64</pre>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">tour</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">])[[</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">,</span> <span class="s2">"tourney_date"</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">tour</span><span class="p">[</span><span class="s2">"days_since_last_tourney"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tour</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"player_id"</span><span class="p">)[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span>
+<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">tour</span><span class="p">[[</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">,</span> <span class="s2">"days_since_last_tourney"</span><span class="p">]],</span>
+                  <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>   <span class="c1"># przerwa trafia do wszystkich meczów turnieju</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">matches_last_14d</span><span class="p">(</span><span class="n">dates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Dla każdego meczu: ile wcześniejszych meczów gracza ma datę turnieju nie starszą niż 14 dni."""</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">dates</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">first_in_window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">d</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">),</span> <span class="n">side</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">-</span> <span class="n">first_in_window</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">dates</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+
+<span class="n">long</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"match_id"</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">long</span><span class="p">[</span><span class="s2">"matches_14d"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">matches_last_14d</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">long</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">long</span><span class="p">[[</span><span class="s2">"days_since_last_tourney"</span><span class="p">,</span> <span class="s2">"matches_14d"</span><span class="p">]]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>(84612, 19)
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>count</th>
+<th>mean</th>
+<th>std</th>
+<th>min</th>
+<th>25%</th>
+<th>50%</th>
+<th>75%</th>
+<th>max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>days_since_last_tourney</th>
+<td>82408.0</td>
+<td>41.782</td>
+<td>121.837</td>
+<td>0.0</td>
+<td>7.0</td>
+<td>14.0</td>
+<td>25.0</td>
+<td>3255.0</td>
+</tr>
+<tr>
+<th>matches_14d</th>
+<td>84612.0</td>
+<td>2.330</td>
+<td>2.193</td>
+<td>0.0</td>
+<td>1.0</td>
+<td>2.0</td>
+<td>4.0</td>
+<td>15.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6f8b630a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Wynik:</strong> typowa przerwa między turniejami to 2 tygodnie (mediana 14 dni). Maksimum ponad 3000 dni to powroty po wieloletniej przerwie, dlatego w cechach obetniemy przerwę do 365 dni.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fd41bfb0">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="4.-Ranking-Elo">4. Ranking Elo<a class="anchor-link" href="#4.-Ranking-Elo">¶</a></h2><p>Elo to alternatywa dla rankingu ATP, znana z szachów. Każdy gracz startuje z 1500 punktami, a po każdym meczu zwycięzca zabiera przegranemu część punktów: tym więcej, im bardziej wygrana była niespodziewana. Oczekiwane prawdopodobieństwo wygranej A:</p>
+<p>$$P(A) = \frac{1}{1 + 10^{(Elo_B - Elo_A)/400}}$$</p>
+<p>Po meczu Elo zwycięzcy rośnie o $K \cdot (1 - P)$, gdzie $1 - P$ to „stopień zaskoczenia”. Współczynnik $K$ maleje z liczbą rozegranych meczów (wariant FiveThirtyEight: $K = 250 / (n + 5)^{0.4}$), więc nowi gracze szybko „znajdują” swój poziom, a doświadczeni są stabilniejsi. Liczymy też osobne Elo dla każdej nawierzchni, bo np. specjalista od mączki może być dużo słabszy na trawie.</p>
+<p><strong>Kolejność jest kluczowa:</strong> do cechy zapisujemy Elo <strong>przed</strong> meczem, a dopiero potem je aktualizujemy. Lata 2010–2014 to rozgrzewka, żeby w 2015 r. wartości były już stabilne.</p>
+<p>Używamy zwykłej pętli zamiast <code>groupby</code>, bo Elo w meczu zależy od Elo <strong>obu</strong> graczy z ich wcześniejszych meczów, więc nie da się go policzyć jedną operacją wektorową.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=82112b5e">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">compute_elo</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="n">elo</span><span class="p">,</span> <span class="n">elo_surf</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
-    <span class="n">n_played</span><span class="p">,</span> <span class="n">n_played_surf</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+    <span class="n">elo</span><span class="p">,</span> <span class="n">elo_surf</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>                 <span class="c1"># aktualne Elo: gracz -&gt; wartość, (gracz, nawierzchnia) -&gt; wartość</span>
+    <span class="n">n_played</span><span class="p">,</span> <span class="n">n_played_surf</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>       <span class="c1"># liczba rozegranych meczów (do współczynnika K)</span>
     <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">itertuples</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">itertuples</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>   <span class="c1"># mecze w kolejności chronologicznej</span>
         <span class="n">w</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">winner_id</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">loser_id</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">surface</span>
         <span class="n">ew</span><span class="p">,</span> <span class="n">el</span> <span class="o">=</span> <span class="n">elo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mf">1500.0</span><span class="p">),</span> <span class="n">elo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="mf">1500.0</span><span class="p">)</span>
         <span class="n">sw</span><span class="p">,</span> <span class="n">sl</span> <span class="o">=</span> <span class="n">elo_surf</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">w</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="mf">1500.0</span><span class="p">),</span> <span class="n">elo_surf</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="mf">1500.0</span><span class="p">)</span>
-        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">m</span><span class="o">.</span><span class="n">match_id</span><span class="p">,</span> <span class="n">ew</span><span class="p">,</span> <span class="n">el</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sl</span><span class="p">))</span>       <span class="c1"># zapis PRZED aktualizacją</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">m</span><span class="o">.</span><span class="n">match_id</span><span class="p">,</span> <span class="n">ew</span><span class="p">,</span> <span class="n">el</span><span class="p">,</span> <span class="n">sw</span><span class="p">,</span> <span class="n">sl</span><span class="p">))</span>       <span class="c1"># zapis PRZED aktualizacją (brak wycieku)</span>
 
-        <span class="n">p_w</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">((</span><span class="n">el</span> <span class="o">-</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="mi">400</span><span class="p">))</span>
+        <span class="c1"># Elo ogólne</span>
+        <span class="n">p_w</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">((</span><span class="n">el</span> <span class="o">-</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="mi">400</span><span class="p">))</span>          <span class="c1"># oczekiwana szansa zwycięzcy</span>
         <span class="n">k_w</span> <span class="o">=</span> <span class="mi">250</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_played</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.4</span>
         <span class="n">k_l</span> <span class="o">=</span> <span class="mi">250</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_played</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.4</span>
         <span class="n">elo</span><span class="p">[</span><span class="n">w</span><span class="p">],</span> <span class="n">elo</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="n">ew</span> <span class="o">+</span> <span class="n">k_w</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p_w</span><span class="p">),</span> <span class="n">el</span> <span class="o">-</span> <span class="n">k_l</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p_w</span><span class="p">)</span>
 
+        <span class="c1"># Elo na nawierzchni: ta sama logika, osobne słowniki</span>
         <span class="n">ps_w</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">((</span><span class="n">sl</span> <span class="o">-</span> <span class="n">sw</span><span class="p">)</span> <span class="o">/</span> <span class="mi">400</span><span class="p">))</span>
         <span class="n">ks_w</span> <span class="o">=</span> <span class="mi">250</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_played_surf</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">w</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.4</span>
         <span class="n">ks_l</span> <span class="o">=</span> <span class="mi">250</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_played_surf</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.4</span>
@@ -9116,6 +9292,7 @@ Name: count, dtype: int64</pre>
 
 
 <span class="n">elo</span> <span class="o">=</span> <span class="n">compute_elo</span><span class="p">(</span><span class="n">played</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"match_id"</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">elo</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 <span class="n">elo</span><span class="o">.</span><span class="n">tail</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -9126,8 +9303,15 @@ Name: count, dtype: int64</pre>
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>(42306, 5)
+</pre>
+</div>
+</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -9203,32 +9387,34 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ab375f44">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ad0c7675">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="5.-Losowe-role-A/B-i-cechy-%E2%80%9EA-minus-B%E2%80%9D">5. Losowe role A/B i cechy „A minus B”<a class="anchor-link" href="#5.-Losowe-role-A/B-i-cechy-%E2%80%9EA-minus-B%E2%80%9D">¶</a></h2><p>W surowych danych zmienna celu jest zaszyta w nazwach kolumn (<code>winner_*</code> zawsze wygrywa). Gdybyśmy zostawili tę strukturę, model nauczyłby się „kolumna winner wygrywa” i miałby 100% trafności. Dlatego dla każdego meczu losujemy (<code>np.random.default_rng(42)</code>), czy zwycięzca zostaje zawodnikiem A, czy B. Klasy są wtedy zbalansowane ok. 50/50.</p>
-<p>Najpierw dołączamy cechy historyczne zwycięzcy i przegranego, potem robimy zamianę.</p>
+<h2 id="5.-Losowe-role-A/B">5. Losowe role A/B<a class="anchor-link" href="#5.-Losowe-role-A/B">¶</a></h2><p>W surowych danych zmienna celu jest zaszyta w nazwach kolumn (<code>winner_*</code> zawsze wygrywa). Gdybyśmy zostawili tę strukturę, model nauczyłby się „kolumna winner wygrywa” i miałby 100% trafności. Dlatego dla każdego meczu rzucamy monetą (<code>np.random.default_rng(42)</code>), czy zwycięzca zostaje zawodnikiem A, czy B.</p>
+<p>Dzięki temu klasy są zbalansowane ok. 50/50, więc accuracy jest uczciwą metryką i nie potrzebujemy ani <code>class_weight</code>, ani SMOTE.</p>
+<p>Najpierw doklejamy do meczów cechy historyczne zwycięzcy i przegranego oraz Elo, potem robimy zamianę.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ed373b5d">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c170e134">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">HIST_COLS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"n_prev"</span><span class="p">,</span> <span class="s2">"form10"</span><span class="p">,</span> <span class="s2">"surface_wr"</span><span class="p">,</span> <span class="s2">"surface_n_prev"</span><span class="p">,</span> <span class="s2">"h2h_wins"</span><span class="p">,</span> <span class="s2">"h2h_n"</span><span class="p">,</span>
              <span class="s2">"days_since_last_tourney"</span><span class="p">,</span> <span class="s2">"matches_14d"</span><span class="p">,</span> <span class="s2">"serve_avg"</span><span class="p">,</span> <span class="s2">"return_avg"</span><span class="p">]</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="n">in_model_years</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">matches</span><span class="p">[</span><span class="s2">"unfinished"</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="n">in_model_years</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">matches</span><span class="p">[</span><span class="s2">"unfinished"</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>   <span class="c1"># zbiór modelowy: 2015–2024, mecze dokończone</span>
 <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"winner"</span><span class="p">,</span> <span class="s2">"loser"</span><span class="p">]:</span>
     <span class="n">feats</span> <span class="o">=</span> <span class="n">long</span><span class="p">[[</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="s2">"player_id"</span><span class="p">]</span> <span class="o">+</span> <span class="n">HIST_COLS</span><span class="p">]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">HIST_COLS</span><span class="p">})</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">feats</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="p">[</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_id"</span><span class="p">],</span> <span class="n">right_on</span><span class="o">=</span><span class="p">[</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="s2">"player_id"</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">"player_id"</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">feats</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="p">[</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">_id"</span><span class="p">],</span> <span class="n">right_on</span><span class="o">=</span><span class="p">[</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="s2">"player_id"</span><span class="p">],</span>
+                  <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">"player_id"</span><span class="p">)</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">elo</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
@@ -9249,27 +9435,36 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=db756e46">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=71370225">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">RANDOM_STATE</span><span class="p">)</span>
-<span class="n">winner_is_A</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.5</span>
-<span class="n">df</span><span class="p">[</span><span class="s2">"A_wins"</span><span class="p">]</span> <span class="o">=</span> <span class="n">winner_is_A</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">winner_is_A</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.5</span>      <span class="c1"># rzut monetą dla każdego meczu</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">"A_wins"</span><span class="p">]</span> <span class="o">=</span> <span class="n">winner_is_A</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>       <span class="c1"># zmienna celu</span>
 
+<span class="c1"># przepisujemy kolumny zawodników na role A i B według wyniku rzutu</span>
 <span class="n">PLAYER_COLS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="s2">"hand"</span><span class="p">,</span> <span class="s2">"ht"</span><span class="p">,</span> <span class="s2">"age"</span><span class="p">,</span> <span class="s2">"rank"</span><span class="p">,</span> <span class="s2">"rank_points"</span><span class="p">,</span> <span class="s2">"seed"</span><span class="p">,</span> <span class="s2">"entry"</span><span class="p">,</span>
                <span class="s2">"elo"</span><span class="p">,</span> <span class="s2">"surface_elo"</span><span class="p">]</span> <span class="o">+</span> <span class="n">HIST_COLS</span>
 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">PLAYER_COLS</span><span class="p">:</span>
     <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"A_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">winner_is_A</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"winner_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"loser_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">])</span>
     <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"B_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">winner_is_A</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"loser_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"winner_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">])</span>
 
-<span class="c1"># kolumny z oryginalnymi nazwami winner/loser oraz wynik meczu usuwamy (wyciek)</span>
+<span class="c1"># usuwamy kolumny winner/loser, statystyki bieżącego meczu i wynik (wyciek)</span>
 <span class="n">leak_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">"winner_"</span><span class="p">,</span> <span class="s2">"loser_"</span><span class="p">,</span> <span class="s2">"w_"</span><span class="p">,</span> <span class="s2">"l_"</span><span class="p">))]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"score"</span><span class="p">,</span> <span class="s2">"minutes"</span><span class="p">]</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">leak_cols</span><span class="p">)</span>
+
+<span class="c1"># po np.where kolumny mają typ object, więc przywracamy typy liczbowe</span>
+<span class="n">num_player_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"ht"</span><span class="p">,</span> <span class="s2">"age"</span><span class="p">,</span> <span class="s2">"rank"</span><span class="p">,</span> <span class="s2">"rank_points"</span><span class="p">,</span> <span class="s2">"seed"</span><span class="p">,</span> <span class="s2">"elo"</span><span class="p">,</span> <span class="s2">"surface_elo"</span><span class="p">]</span> <span class="o">+</span> <span class="n">HIST_COLS</span>
+<span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">num_player_cols</span><span class="p">:</span>
+        <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">])</span>
+    <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_id"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
 <span class="n">df</span><span class="p">[</span><span class="s2">"A_wins"</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -9281,7 +9476,7 @@ Name: count, dtype: int64</pre>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>A_wins
 0    0.503
@@ -9292,55 +9487,38 @@ Name: proportion, dtype: float64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1d731f66">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=786bd720">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Kolumny po <code>np.where</code> mają typ <code>object</code>, więc przywracamy typy liczbowe.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=a85662e6">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">num_player_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"ht"</span><span class="p">,</span> <span class="s2">"age"</span><span class="p">,</span> <span class="s2">"rank"</span><span class="p">,</span> <span class="s2">"rank_points"</span><span class="p">,</span> <span class="s2">"seed"</span><span class="p">,</span> <span class="s2">"elo"</span><span class="p">,</span> <span class="s2">"surface_elo"</span><span class="p">]</span> <span class="o">+</span> <span class="n">HIST_COLS</span>
-<span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">]:</span>
-    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">num_player_cols</span><span class="p">:</span>
-        <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">])</span>
-    <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_id"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-</pre></div>
+<p><strong>Wynik:</strong> 49,7% meczów wygrał zawodnik A, 50,3% zawodnik B, czyli klasy są zbalansowane.</p>
 </div>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=85ff2a3a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=29e33b02">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="6.-Braki-danych,-cechy-por%C3%B3wnawcze-i-podzia%C5%82-czasowy">6. Braki danych, cechy porównawcze i podział czasowy<a class="anchor-link" href="#6.-Braki-danych,-cechy-por%C3%B3wnawcze-i-podzia%C5%82-czasowy">¶</a></h2><p>Podział: <strong>trening 2015–2022, test 2023–2024</strong>. Wszystkie wartości do imputacji (mediany) liczymy tylko na treningu.</p>
-<p>Zasady imputacji (każdy brak dostaje flagę, bo brak to też informacja):</p>
+<h2 id="6.-Podzia%C5%82-czasowy,-imputacja-brak%C3%B3w-i-cechy-%E2%80%9EA-minus-B%E2%80%9D">6. Podział czasowy, imputacja braków i cechy „A minus B”<a class="anchor-link" href="#6.-Podzia%C5%82-czasowy,-imputacja-brak%C3%B3w-i-cechy-%E2%80%9EA-minus-B%E2%80%9D">¶</a></h2><h3 id="6.1-Podzia%C5%82-i-imputacja">6.1 Podział i imputacja<a class="anchor-link" href="#6.1-Podzia%C5%82-i-imputacja">¶</a></h3><p>Dzielimy dane <strong>czasowo, nie losowo</strong>: trening 2015–2022, test 2023–2024. Model nie może uczyć się na przyszłości, a ocena na nowszych sezonach pokazuje, czy się nie „starzeje”.</p>
+<p>Zasady imputacji (każdy brak dostaje najpierw flagę, bo brak to też informacja):</p>
 <ul>
 <li>brak rankingu = gracz spoza rankingu → ranking 2000, punkty 0, flaga <code>*_unranked</code>,</li>
 <li>brak wzrostu → mediana z treningu, flaga <code>*_ht_missing</code>,</li>
 <li>brak wieku → mediana z treningu,</li>
 <li>brak średnich serwisowych (za mało meczów ze statystykami) → mediana z treningu,</li>
-<li>brak przerwy (pierwszy turniej w danych) → 28 dni,</li>
+<li>brak przerwy (pierwszy turniej gracza w danych) → 28 dni,</li>
 <li>ręka: <code>U</code> (nieznana) i <code>A</code> (oburęczny, 1 przypadek) łączymy w <code>U</code>.</li>
 </ul>
+<p>Mediany liczymy <strong>tylko na treningu</strong>, analogicznie do skalera, który dopasowujemy tylko na zbiorze treningowym. Dodajemy też flagi znane przed meczem: rozstawienie (<code>seeded</code>), awans z kwalifikacji lub jako lucky loser (<code>qualifier</code>) i dzika karta (<code>wildcard</code>).</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b91c1d6c">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=938f7e15">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9352,6 +9530,7 @@ Name: proportion, dtype: float64</pre>
 <span class="n">is_train</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"split"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"train"</span>
 
 <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">]:</span>
+    <span class="c1"># flagi PRZED imputacją</span>
     <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_unranked"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_rank"</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_ht_missing"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_ht"</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_hand"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_hand"</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_hand"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">"R"</span><span class="p">,</span> <span class="s2">"L"</span><span class="p">]),</span> <span class="s2">"U"</span><span class="p">)</span>
@@ -9359,14 +9538,18 @@ Name: proportion, dtype: float64</pre>
     <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_qualifier"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_entry"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">"Q"</span><span class="p">,</span> <span class="s2">"LL"</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_wildcard"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_entry"</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">"WC"</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
+<span class="c1"># wartości stałe</span>
 <span class="n">df</span><span class="p">[[</span><span class="s2">"A_rank"</span><span class="p">,</span> <span class="s2">"B_rank"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">"A_rank"</span><span class="p">,</span> <span class="s2">"B_rank"</span><span class="p">]]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
 <span class="n">df</span><span class="p">[[</span><span class="s2">"A_rank_points"</span><span class="p">,</span> <span class="s2">"B_rank_points"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">"A_rank_points"</span><span class="p">,</span> <span class="s2">"B_rank_points"</span><span class="p">]]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">df</span><span class="p">[[</span><span class="s2">"A_days_since_last_tourney"</span><span class="p">,</span> <span class="s2">"B_days_since_last_tourney"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">"A_days_since_last_tourney"</span><span class="p">,</span> <span class="s2">"B_days_since_last_tourney"</span><span class="p">]]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">28</span><span class="p">)</span>
 
+<span class="c1"># mediany liczone tylko na treningu</span>
 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"ht"</span><span class="p">,</span> <span class="s2">"age"</span><span class="p">,</span> <span class="s2">"serve_avg"</span><span class="p">,</span> <span class="s2">"return_avg"</span><span class="p">]:</span>
     <span class="n">train_median</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">is_train</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"A_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">is_train</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"B_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">]])</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
     <span class="n">df</span><span class="p">[[</span><span class="sa">f</span><span class="s2">"A_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"B_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="sa">f</span><span class="s2">"A_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"B_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span><span class="p">]]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">train_median</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">: mediana z treningu = </span><span class="si">{</span><span class="n">train_median</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s2">"split"</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -9386,20 +9569,35 @@ return_avg: mediana z treningu = 0.363
 </pre>
 </div>
 </div>
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
+<pre>split
+train    20898
+test      5861
+Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=04888d9b">
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6853aa5e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Cechy porównawcze liczymy jako <strong>różnicę A minus B</strong>. Gdy zamienimy graczy miejscami, różnica zmienia znak, a cel się odwraca, więc model „widzi” mecz symetrycznie. Ranking i punkty są silnie skośne (ranking do ponad 2000), więc bierzemy różnicę logarytmów.</p>
+<p><strong>Wynik:</strong> 20 898 meczów treningowych i 5 861 testowych (78% / 22%).</p>
+<h3 id="6.2-Cechy-por%C3%B3wnawcze">6.2 Cechy porównawcze<a class="anchor-link" href="#6.2-Cechy-por%C3%B3wnawcze">¶</a></h3><p>Cechy liczymy jako <strong>różnicę A minus B</strong>. Gdy zamienimy graczy miejscami, różnica zmienia znak, a cel się odwraca, więc model „widzi” mecz symetrycznie i jedna cecha zastępuje dwie.</p>
+<ul>
+<li>Ranking i punkty są silnie skośne: różnica między 1. a 10. miejscem znaczy dużo więcej niż między 501. a 510. Dlatego bierzemy różnicę logarytmów (<code>log1p(x) = log(1 + x)</code> dla punktów, bo mogą wynosić 0).</li>
+<li>Przerwę obcinamy do 365 dni (<code>clip</code>), żeby powroty po kilku latach nie zdominowały skali.</li>
+<li><code>lefty_vs_righty</code> = 1, gdy dokładnie jeden z graczy jest leworęczny (<code>^</code> to XOR). Gra z leworęcznym bywa dla praworęcznych niewygodna.</li>
+</ul>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=a9194fa4">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=1fdcb9cf">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9414,10 +9612,10 @@ return_avg: mediana z treningu = 0.363
 <span class="n">df</span><span class="p">[</span><span class="s2">"height_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_ht"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_ht"</span><span class="p">]</span>
 <span class="n">df</span><span class="p">[</span><span class="s2">"elo_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_elo"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_elo"</span><span class="p">]</span>
 <span class="n">df</span><span class="p">[</span><span class="s2">"surface_elo_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_surface_elo"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_surface_elo"</span><span class="p">]</span>
-<span class="n">df</span><span class="p">[</span><span class="s2">"form_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_form10"</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_form10"</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">"form_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_form10"</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_form10"</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>   <span class="c1"># brak historii = forma neutralna</span>
 <span class="n">df</span><span class="p">[</span><span class="s2">"surface_winrate_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_surface_wr"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_surface_wr"</span><span class="p">]</span>
 <span class="n">df</span><span class="p">[</span><span class="s2">"h2h_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_h2h_wins"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_h2h_wins"</span><span class="p">]</span>
-<span class="n">df</span><span class="p">[</span><span class="s2">"h2h_n"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_h2h_n"</span><span class="p">]</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">"h2h_n"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_h2h_n"</span><span class="p">]</span>                                                    <span class="c1"># liczba wcześniejszych spotkań pary</span>
 <span class="n">df</span><span class="p">[</span><span class="s2">"rest_days_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_days_since_last_tourney"</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="mi">365</span><span class="p">)</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_days_since_last_tourney"</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="mi">365</span><span class="p">)</span>
 <span class="n">df</span><span class="p">[</span><span class="s2">"matches_14d_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_matches_14d"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_matches_14d"</span><span class="p">]</span>
 <span class="n">df</span><span class="p">[</span><span class="s2">"serve_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_serve_avg"</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_serve_avg"</span><span class="p">]</span>
@@ -9432,17 +9630,17 @@ return_avg: mediana z treningu = 0.363
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3418fe3c">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=125d0277">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Lista cech zalecanych do modeli (pozostałe kolumny, np. <code>A_name</code>, <code>tourney_name</code>, zostają w pliku tylko do opisu i analizy segmentów).</p>
+<h3 id="6.3-Proponowany-zestaw-cech-do-modeli">6.3 Proponowany zestaw cech do modeli<a class="anchor-link" href="#6.3-Proponowany-zestaw-cech-do-modeli">¶</a></h3><p>Pozostałe kolumny (np. <code>A_name</code>, <code>tourney_name</code>) zostają w pliku tylko do opisu i analizy segmentów. Cechy kategoryczne trafią w modelach do <code>OneHotEncoder</code>.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=120c1320">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a1e23420">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9807,37 +10005,19 @@ Braki w cechach: 0
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=3533ebeb">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=63715fd8">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s2">"split"</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
-</pre></div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Wynik:</strong> 31 cech (wymóg projektu: co najmniej 10), bez braków. Średnie różnic są bliskie zera, co potwierdza, że losowanie ról A/B nie faworyzuje żadnej strony.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[20]:</div>
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>split
-train    20898
-test      5861
-Name: count, dtype: int64</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ef743d73">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1c291145">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9847,18 +10027,19 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=4236a7fd">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=dccf696c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">countplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">"A_wins"</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="s2">"split"</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Balans klas A_wins"</span><span class="p">)</span>
 
+<span class="c1"># dla każdego meczu: czy reguła trafiła (True/False), potem średnia w roku = accuracy</span>
 <span class="n">year_acc</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">rank_rule</span><span class="o">=</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"A_rank"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">df</span><span class="p">[</span><span class="s2">"B_rank"</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">==</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_wins"</span><span class="p">],</span>
               <span class="n">elo_rule</span><span class="o">=</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"elo_diff"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">==</span> <span class="n">df</span><span class="p">[</span><span class="s2">"A_wins"</span><span class="p">])</span>
@@ -9886,15 +10067,27 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=20ca8add">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=0fc39802">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Wynik:</strong> klasy są zbalansowane w obu zbiorach. Przewidywalność tenisa spada w czasie: reguła rankingowa trafiała w ok. 69% meczów w 2015 r., a w 2024 r. już tylko w ok. 64% (prawdopodobnie efekt zmiany pokoleniowej po erze Federera, Nadala i Djokovicia).</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=0259ce04">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">rule_accuracy</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Accuracy prostych reguł na wybranym podzbiorze meczów."""</span>
     <span class="n">d</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">({</span>
         <span class="s2">"lepszy ranking"</span><span class="p">:</span> <span class="p">((</span><span class="n">d</span><span class="p">[</span><span class="s2">"A_rank"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">d</span><span class="p">[</span><span class="s2">"B_rank"</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">==</span> <span class="n">d</span><span class="p">[</span><span class="s2">"A_wins"</span><span class="p">])</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
@@ -9916,7 +10109,7 @@ Name: count, dtype: int64</pre>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[22]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -9968,22 +10161,23 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=68a5e0c7">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e74b61d4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="7.2-Test-symetrii">7.2 Test symetrii<a class="anchor-link" href="#7.2-Test-symetrii">¶</a></h3><p>Jeśli zamiana A↔B była poprawna, to po odwróceniu ról różnice zmieniają znak, a cel się odwraca. Sprawdzamy też, że po losowaniu nie zostało żadne powiązanie roli z wynikiem: średnia <code>log_rank_diff</code> w grupie <code>A_wins = 1</code> musi być ujemna (A ma lepszy ranking), a w grupie <code>A_wins = 0</code> dodatnia o podobnej wielkości.</p>
+<p><strong>Wynik:</strong> baseline rankingowy trafia w <strong>64,0%</strong> meczów testowych i to jest próg do pobicia. Samo Elo jest prawie tak dobre jak ranking ATP.</p>
+<h3 id="7.2-Test-symetrii">7.2 Test symetrii<a class="anchor-link" href="#7.2-Test-symetrii">¶</a></h3><p>Jeśli losowanie A/B było poprawne, to gdy A wygrał (<code>A_wins = 1</code>), A powinien mieć średnio lepszy ranking (ujemny <code>log_rank_diff</code>), wyższe Elo i lepszą formę, a gdy przegrał, dokładnie na odwrót, z podobną wielkością.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=15bd2681">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=17976e54">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"A_wins"</span><span class="p">)[[</span><span class="s2">"log_rank_diff"</span><span class="p">,</span> <span class="s2">"elo_diff"</span><span class="p">,</span> <span class="s2">"form_diff"</span><span class="p">,</span> <span class="s2">"h2h_diff"</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -9997,7 +10191,7 @@ Name: count, dtype: int64</pre>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[23]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[22]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -10053,26 +10247,27 @@ Name: count, dtype: int64</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a6f81dda">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=b424af80">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Wynik:</strong> wartości w obu wierszach są prawie lustrzanym odbiciem, więc losowanie zadziałało i nie zostało żadne ukryte powiązanie roli z wynikiem.</p>
 <h3 id="7.3-Test-%E2%80%9E%C5%9Blepoty-na-przysz%C5%82o%C5%9B%C4%87%E2%80%9D">7.3 Test „ślepoty na przyszłość”<a class="anchor-link" href="#7.3-Test-%E2%80%9E%C5%9Blepoty-na-przysz%C5%82o%C5%9B%C4%87%E2%80%9D">¶</a></h3><p>Najmocniejszy test na wyciek czasowy: liczymy cechy historyczne jeszcze raz, ale <strong>tylko na danych do końca 2019 r.</strong> Jeżeli jakaś cecha meczu z 2019 r. korzysta z przyszłości, to jej wartość się zmieni, bo przyszłych meczów nie ma w danych. Wszystkie wartości muszą być identyczne.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a4f47baa">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=55445c8f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">history_features</span><span class="p">(</span><span class="n">played_df</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Ta sama logika co w punkcie 3, zamknięta w funkcji."""</span>
+<span class="w">    </span><span class="sd">"""Ta sama logika co w punkcie 3, zamknięta w funkcji, żeby uruchomić ją na innych danych."""</span>
     <span class="n">lg</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">player_rows</span><span class="p">(</span><span class="n">played_df</span><span class="p">,</span> <span class="s2">"winner"</span><span class="p">,</span> <span class="s2">"loser"</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">player_rows</span><span class="p">(</span><span class="n">played_df</span><span class="p">,</span> <span class="s2">"loser"</span><span class="p">,</span> <span class="s2">"winner"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
     <span class="n">lg</span> <span class="o">=</span> <span class="n">lg</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">"player_id"</span><span class="p">,</span> <span class="s2">"match_id"</span><span class="p">])</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">lg</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"player_id"</span><span class="p">)</span>
@@ -10089,17 +10284,20 @@ Name: count, dtype: int64</pre>
 
 
 <span class="n">check_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"n_prev"</span><span class="p">,</span> <span class="s2">"form10"</span><span class="p">,</span> <span class="s2">"serve_avg"</span><span class="p">,</span> <span class="s2">"surface_wr"</span><span class="p">,</span> <span class="s2">"h2h_wins"</span><span class="p">,</span> <span class="s2">"matches_14d"</span><span class="p">]</span>
-<span class="n">cut</span> <span class="o">=</span> <span class="n">played</span><span class="p">[</span><span class="n">played</span><span class="p">[</span><span class="s2">"year"</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">2019</span><span class="p">]</span>
+<span class="n">cut</span> <span class="o">=</span> <span class="n">played</span><span class="p">[</span><span class="n">played</span><span class="p">[</span><span class="s2">"year"</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">2019</span><span class="p">]</span>   <span class="c1"># dane ucięte: bez meczów od 2020 r.</span>
+
+<span class="c1"># cechy meczów z 2019 r.: z pełnych danych i z danych uciętych</span>
 <span class="n">full_2019</span> <span class="o">=</span> <span class="n">long</span><span class="p">[</span><span class="n">long</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span> <span class="o">==</span> <span class="mi">2019</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="s2">"player_id"</span><span class="p">])[</span><span class="n">check_cols</span><span class="p">]</span>
 <span class="n">cut_2019</span> <span class="o">=</span> <span class="n">history_features</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span>
 <span class="n">cut_2019</span> <span class="o">=</span> <span class="n">cut_2019</span><span class="p">[</span><span class="n">cut_2019</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span> <span class="o">==</span> <span class="mi">2019</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="s2">"player_id"</span><span class="p">])[</span><span class="n">check_cols</span><span class="p">]</span>
 
+<span class="c1"># to samo dla Elo</span>
 <span class="n">elo_cut</span> <span class="o">=</span> <span class="n">compute_elo</span><span class="p">(</span><span class="n">cut</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"match_id"</span><span class="p">))</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"match_id"</span><span class="p">)</span>
 <span class="n">elo_full</span> <span class="o">=</span> <span class="n">elo</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"match_id"</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">elo_cut</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
 
 <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">({</span>
     <span class="s2">"cechy historyczne identyczne"</span><span class="p">:</span> <span class="n">full_2019</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">cut_2019</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()),</span>
-    <span class="s2">"Elo identyczne"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">elo_full</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">elo_cut</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+    <span class="s2">"Elo identyczne"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">elo_full</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">elo_cut</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>   <span class="c1"># porównanie z tolerancją na zaokrąglenia</span>
 <span class="p">})</span>
 </pre></div>
 </div>
@@ -10111,7 +10309,7 @@ Name: count, dtype: int64</pre>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[24]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[23]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>cechy historyczne identyczne    True
 Elo identyczne                  True
@@ -10121,30 +10319,32 @@ dtype: bool</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ce5a8e0f">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bd9feb10">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="7.4-Szybki-test-%E2%80%9Eczy-wynik-nie-jest-za-dobry%E2%80%9D">7.4 Szybki test „czy wynik nie jest za dobry”<a class="anchor-link" href="#7.4-Szybki-test-%E2%80%9Eczy-wynik-nie-jest-za-dobry%E2%80%9D">¶</a></h3><p>To nie jest jeszcze modelowanie (to część 2 projektu), tylko kontrola: prosta regresja logistyczna na cechach liczbowych, uczona na 2015–2022 i sprawdzona na 2023–2024. Wynik w okolicach 65–70% jest realistyczny. Wynik powyżej 80% oznaczałby, że do cech przeciekła informacja o wyniku.</p>
+<p><strong>Wynik:</strong> oba testy dają <code>True</code>. To mocniejszy dowód niż samo „użyliśmy <code>shift(1)</code>”: <strong>żadna</strong> cecha nie zależy od meczów rozegranych później.</p>
+<h3 id="7.4-Test-%E2%80%9Eczy-wynik-nie-jest-za-dobry%E2%80%9D">7.4 Test „czy wynik nie jest za dobry”<a class="anchor-link" href="#7.4-Test-%E2%80%9Eczy-wynik-nie-jest-za-dobry%E2%80%9D">¶</a></h3><p>To jeszcze nie modelowanie (to kolejna część projektu), tylko kontrola: prosta regresja logistyczna na cechach liczbowych, uczona na 2015–2022 i sprawdzona na 2023–2024. Wynik w okolicach 65–70% jest realistyczny. Wynik powyżej 80% oznaczałby, że do cech przeciekła informacja o wyniku meczu.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=38c0250a">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=8deaf726">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">is_train</span><span class="p">,</span> <span class="n">NUM_FEATURES</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">is_train</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">]</span>
 <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">is_train</span><span class="p">,</span> <span class="n">NUM_FEATURES</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">is_train</span><span class="p">,</span> <span class="n">TARGET</span><span class="p">]</span>
 
+<span class="c1"># skaler w pipeline: dopasowywany tylko na treningu</span>
 <span class="n">sanity</span> <span class="o">=</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">(),</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">1000</span><span class="p">))</span>
 <span class="n">sanity</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
-<span class="n">proba</span> <span class="o">=</span> <span class="n">sanity</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_test</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">proba</span> <span class="o">=</span> <span class="n">sanity</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">X_test</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>   <span class="c1"># prawdopodobieństwo, że wygra A</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test 2023–2024: accuracy = </span><span class="si">{</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="w"> </span><span class="n">proba</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">0.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, AUC = </span><span class="si">{</span><span class="n">roc_auc_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span><span class="w"> </span><span class="n">proba</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -10164,12 +10364,12 @@ dtype: bool</pre>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=bf1d5558">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a606d199">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [26]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">coefs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">sanity</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">coef_</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">NUM_FEATURES</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span>
@@ -10194,22 +10394,34 @@ dtype: bool</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6e7f28b8">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fb273899">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="8.-Zapis-gotowego-zbioru">8. Zapis gotowego zbioru<a class="anchor-link" href="#8.-Zapis-gotowego-zbioru">¶</a></h2><p>Zapisujemy identyfikatory (do analizy segmentów i podglądu), kontekst meczu, surowe cechy A/B, cechy porównawcze, cel i kolumnę <code>split</code>. Pozostałe części projektu wczytują plik i od razu dzielą go po <code>split</code>.</p>
+<p><strong>Wynik:</strong> accuracy 66,0% i AUC 0,726 na teście wobec 64,0% baseline'u. To realistyczny zysk, bez śladu wycieku.</p>
+<p><strong>Uwaga do interpretacji współczynników:</strong> największe wagi mają <code>surface_elo_diff</code> i <code>points_diff</code>, a <code>log_rank_diff</code> ma mały <strong>dodatni</strong> współczynnik, choć sam w sobie gorszy ranking A obniża jego szanse. To efekt <strong>współliniowości</strong>: ranking, punkty i oba Elo mierzą prawie to samo (siłę gracza), więc model rozdziela ich wpływ w sposób nieintuicyjny i znaki pojedynczych współczynników nie nadają się do interpretacji. Z tego samego powodu ujemny wychodzi <code>surface_winrate_diff</code>. W części modelowej warto pokazać macierz korelacji i użyć regularyzacji (Elastic Net), która część z tych cech wyzeruje.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=51ffe187">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d439dfd5">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="8.-Zapis-gotowego-zbioru">8. Zapis gotowego zbioru<a class="anchor-link" href="#8.-Zapis-gotowego-zbioru">¶</a></h2><p>Zapisujemy identyfikatory (do analizy segmentów i podglądu), kontekst meczu, surowe wartości A/B, cechy porównawcze, flagi, cel i kolumnę <code>split</code>. Zbiór jest posortowany chronologicznie (<code>match_id</code>), więc nadaje się do <code>TimeSeriesSplit</code>.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=97f55225">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [27]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [26]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">ID_COLS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"match_id"</span><span class="p">,</span> <span class="s2">"tourney_id"</span><span class="p">,</span> <span class="s2">"tourney_name"</span><span class="p">,</span> <span class="s2">"tourney_date"</span><span class="p">,</span> <span class="s2">"year"</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span>
@@ -10223,9 +10435,9 @@ dtype: bool</pre>
              <span class="s2">"matches_14d_diff"</span><span class="p">,</span> <span class="s2">"serve_diff"</span><span class="p">,</span> <span class="s2">"return_diff"</span><span class="p">,</span> <span class="s2">"log_n_prev_diff"</span><span class="p">,</span> <span class="s2">"seeded_diff"</span><span class="p">,</span> <span class="s2">"lefty_vs_righty"</span><span class="p">]</span>
 <span class="n">FLAG_COLS</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"unranked"</span><span class="p">,</span> <span class="s2">"ht_missing"</span><span class="p">,</span> <span class="s2">"seeded"</span><span class="p">,</span> <span class="s2">"qualifier"</span><span class="p">,</span> <span class="s2">"wildcard"</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">]]</span>
 
-<span class="n">out_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ID_COLS</span> <span class="o">+</span> <span class="n">CONTEXT_COLS</span> <span class="o">+</span> <span class="n">RAW_AB</span> <span class="o">+</span> <span class="n">DIFF_COLS</span> <span class="o">+</span> <span class="n">FLAG_COLS</span> <span class="o">+</span> <span class="p">[</span><span class="n">TARGET</span><span class="p">]))</span>
+<span class="n">out_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ID_COLS</span> <span class="o">+</span> <span class="n">CONTEXT_COLS</span> <span class="o">+</span> <span class="n">RAW_AB</span> <span class="o">+</span> <span class="n">DIFF_COLS</span> <span class="o">+</span> <span class="n">FLAG_COLS</span> <span class="o">+</span> <span class="p">[</span><span class="n">TARGET</span><span class="p">]))</span>   <span class="c1"># bez duplikatów</span>
 <span class="n">final</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">out_cols</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"match_id"</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">final</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">"dane/atp_cechy_2015_2024.csv"</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">float_format</span><span class="o">=</span><span class="s2">"</span><span class="si">%.5g</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">final</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">"dane/atp_cechy_2015_2024.csv"</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">float_format</span><span class="o">=</span><span class="s2">"</span><span class="si">%.5g</span><span class="s2">"</span><span class="p">)</span>   <span class="c1"># 5 cyfr znaczących</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">final</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 <span class="n">final</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
@@ -10245,7 +10457,7 @@ dtype: bool</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[27]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[26]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -10658,16 +10870,77 @@ dtype: bool</pre>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f1583fda">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ed37f913">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Jak-wczyta%C4%87-zbi%C3%B3r-w-kolejnych-notatnikach">Jak wczytać zbiór w kolejnych notatnikach<a class="anchor-link" href="#Jak-wczyta%C4%87-zbi%C3%B3r-w-kolejnych-notatnikach">¶</a></h3><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"dane/atp_cechy_2015_2024.csv"</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">])</span>
+<p>Wczytanie zbioru w kolejnych notatnikach:</p>
+<div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"dane/atp_cechy_2015_2024.csv"</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">"tourney_date"</span><span class="p">])</span>
 <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">"split"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">"split"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"test"</span><span class="p">]</span>
 </pre></div>
-<p>Kolumny <code>NUM_FEATURES</code> i <code>CAT_FEATURES</code> z punktu 6 to proponowany zestaw cech. Do <code>TimeSeriesSplit</code> zbiór jest już posortowany chronologicznie (<code>match_id</code>).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=29e77a69">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="9.-Podsumowanie-i-wnioski">9. Podsumowanie i wnioski<a class="anchor-link" href="#9.-Podsumowanie-i-wnioski">¶</a></h2><p><strong>Co zrobiliśmy:</strong></p>
+<ul>
+<li>Z 42 571 meczów ATP z lat 2010–2024 zbudowaliśmy zbiór <strong>26 759 meczów z lat 2015–2024</strong> z <strong>31 cechami</strong> przedmeczowymi i zbalansowaną zmienną celu <code>A_wins</code> (49,7% / 50,3%).</li>
+<li>Usunęliśmy 913 meczów niedokończonych (krecze, walkowery, dyskwalifikacje) i poprawiliśmy błędne wzrosty (3, 15, 71 cm).</li>
+<li>Zbudowaliśmy cechy historyczne (forma, wyniki na nawierzchni, H2H, zmęczenie, statystyki serwisu i returnu) oraz ranking Elo, korzystając z historii od 2010 r., żeby uniknąć zimnego startu.</li>
+<li>Podzieliliśmy dane czasowo: trening 2015–2022 (20 898 meczów), test 2023–2024 (5 861 meczów).</li>
+</ul>
+<p><strong>Jak zabezpieczyliśmy się przed wyciekiem danych:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Ryzyko</th>
+<th>Rozwiązanie</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cel zaszyty w kolumnach <code>winner</code>/<code>loser</code></td>
+<td>Losowe role A/B, cel <code>A_wins</code></td>
+</tr>
+<tr>
+<td>Wynik i statystyki bieżącego meczu</td>
+<td>Usunięcie <code>score</code>, <code>minutes</code>, <code>w_*</code>, <code>l_*</code>; statystyki tylko jako średnie z wcześniejszych meczów</td>
+</tr>
+<tr>
+<td>Cechy „podglądające” przyszłość</td>
+<td><code>shift(1)</code> w cechach kroczących, Elo zapisywane przed aktualizacją, test na danych uciętych na 2019 r.</td>
+</tr>
+<tr>
+<td>Informacja z testu w imputacji</td>
+<td>Mediany liczone tylko na treningu</td>
+</tr>
+<tr>
+<td>Uczenie na przyszłości</td>
+<td>Podział czasowy zamiast losowego</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Najważniejsze obserwacje:</strong></p>
+<ul>
+<li>Baseline „wygrywa lepszy w rankingu” trafia w <strong>64,0%</strong> meczów testowych, a reguła oparta na Elo w 63,8%.</li>
+<li>Przewidywalność tenisa spada w czasie (z ok. 69% w 2015 r. do ok. 64% w 2024 r.).</li>
+<li>Prosta regresja logistyczna na naszych cechach daje <strong>66,0% accuracy i AUC 0,726</strong> na teście, czyli realistyczny zysk ok. 2 p.p. nad baseline'em bez oznak wycieku.</li>
+<li>Cechy opisujące siłę gracza (ranking, punkty, Elo) są silnie współliniowe, co trzeba uwzględnić przy interpretacji modeli liniowych.</li>
+</ul>
+<p><strong>Ograniczenia:</strong></p>
+<ul>
+<li><code>tourney_date</code> to data rozpoczęcia turnieju, więc przerwę mierzymy między turniejami, a nie między meczami.</li>
+<li>Statystyk serwisowych brakuje w ok. 4% meczów (głównie Puchar Davisa); uzupełniamy je medianą.</li>
+<li>Gracze z krótką historią mają mniej wiarygodne cechy; łagodzimy to wygładzaniem, cechą <code>log_n_prev_diff</code> i rozgrzewką od 2010 r.</li>
+</ul>
 </div>
 </div>
 </div>
